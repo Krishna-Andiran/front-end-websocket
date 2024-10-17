@@ -15,7 +15,7 @@ class WebSocketManager {
     }
 
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.29.17:8000/ws/$userId'),
+      Uri.parse('ws://10.0.2.2:8000/ws/$userId'),
     );
 
     // Listen for messages from the server
