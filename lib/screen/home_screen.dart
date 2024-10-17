@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/html.dart' as html; // For web
+import 'package:web_socket_channel/io.dart'; // For mobile
+import 'package:flutter/foundation.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,18 +13,25 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late WebSocketChannel channel;
-  TextEditingController messageController = TextEditingController();
-  List<String> messages = [];
+  final TextEditingController messageController = TextEditingController();
+  final FocusNode messageFocusNode = FocusNode(); // Create a FocusNode
+  final List<String> messages = [];
+  String ip = "192.168.29.17";
 
   @override
   void initState() {
     super.initState();
-    // Connect to WebSocket server
-    channel = IOWebSocketChannel.connect("ws://10.0.2.2:8000/ws");
+    if (kIsWeb) {
+      channel = html.HtmlWebSocketChannel.connect(Uri.parse("ws://$ip:8000/ws"));
+      print("Connected to WebSocket server: ws://$ip:8000/ws");
+    } else {
+      channel = IOWebSocketChannel.connect("ws://$ip:8000/ws");
+      print("Connected to WebSocket server: ws://$ip:8000/ws");
+    }
 
-    // Listen for incoming messages from the server
     channel.stream.listen(
       (message) {
+        print("Received message: $message"); // Debugging line
         setState(() {
           messages.add("Server: $message");
         });
@@ -38,8 +47,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void sendMessage(String message) {
     if (message.isNotEmpty) {
-      channel.sink.add(message); // Send message to the server
+      print("Sending message: $message"); // Debugging line
+      channel.sink.add(message);
       messageController.clear();
+      // Request focus back to the TextField
+      messageFocusNode.requestFocus(); 
     }
   }
 
@@ -48,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Close the WebSocket connection when the widget is disposed
     channel.sink.close();
     messageController.dispose();
+    messageFocusNode.dispose(); // Dispose the FocusNode
     super.dispose();
   }
 
@@ -55,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Flutter WebSocket Example"),
+        title: const Text("Flutter WebSocket Example"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -72,14 +85,20 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             TextField(
+              autocorrect: true,
+              autofocus: true,
               controller: messageController,
-              decoration: InputDecoration(labelText: "Enter a message"),
+              focusNode: messageFocusNode, // Assign the FocusNode
+              decoration: const InputDecoration(labelText: "Enter a message"),
+              onSubmitted: (value) {
+                sendMessage(value); // Send message on Enter key
+              },
             ),
             ElevatedButton(
               onPressed: () {
                 sendMessage(messageController.text);
               },
-              child: Text("Send"),
+              child: const Text("Send"),
             ),
           ],
         ),
