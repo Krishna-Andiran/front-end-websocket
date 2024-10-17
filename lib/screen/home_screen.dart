@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Connect to WebSocket server
-    channel = IOWebSocketChannel.connect("ws://192.168.29.17:8000/ws");
+    channel = IOWebSocketChannel.connect("ws://10.0.2.2:8000/ws");
 
     // Listen for incoming messages from the server
     channel.stream.listen(
